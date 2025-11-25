@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>N빵 계산기</title>
+    
+    <!-- 1. Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. React & ReactDOM CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 3. Babel Standalone (data-presets 추가) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 스타일 정의 -->
+    <style>
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      @keyframes fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+      .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+      .animate-slideUp { animation: slideUp 0.6s ease-out; }
+      .animate-scaleIn { animation: scaleIn 0.3s ease-out; }
+      .animate-fall { animation: fall linear forwards; }
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #f472b6; }
+    </style>
+  </head>
+  <body class="bg-pink-50">
+    <div id="root"></div>
+
+    <!-- React 코드 작성 (data-presets="react" 명시) -->
+    <script type="text/babel" data-presets="react">
+      const { useState, useEffect, useRef } = React;
+
+      // ---------------------------------------------------------
+      // Lucide 아이콘 정의
+      // ---------------------------------------------------------
+      const Crown = (props) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>);
+      const Users = (props) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>);
+      const Gift = (props) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>);
+      const Wand2 = (props) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>);
+      const UserPlus = (props) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>);
+      const Trash2 = (props) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>);
+      const DollarSign = (props) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>);
+      const RefreshCw = (props) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>);
+      const Settings = (props) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>);
+
+      // ---------------------------------------------------------
+      // 메인 앱 컴포넌트
+      // ---------------------------------------------------------
+      function App() {
+        const [names, setNames] = useState([]);
+        const [newName, setNewName] = useState('');
+        const [totalAmount, setTotalAmount] = useState('');
+        const [selectedMode, setSelectedMode] = useState(0);
+        const [customConfig, setCustomConfig] = useState({
+            count: 1,
+            type: 'percent', // 'percent' | 'won' | 'free'
+            value: 0,
+            label: '당첨'
+        });
+        const [step, setStep] = useState('input'); // input, processing, result
+        const [result, setResult] = useState([]);
+        const [animationName, setAnimationName] = useState('???');
+        const [showConfetti, setShowConfetti] = useState(false);
+
+        const audioCtxRef = useRef(null);
+
+        // 옵션 정의
+        const options = [
+          { id: 0, label: '😱 한 명이 다 내기 (몰빵)', icon: <Crown className="w-5 h-5" />, min: 2 },
+          { id: 1, label: '😅 한 명 50%, 나머지 N빵', icon: <Users className="w-5 h-5" />, min: 2 },
+          { id: 2, label: '👯 두 명 각각 25%, 나머지 N빵', icon: <Users className="w-5 h-5" />, min: 3 },
+          { id: 3, label: '🎉 한 명만 0원! (나머지 N빵)', icon: <Gift className="w-5 h-5" />, min: 2 },
+          { id: 4, label: '🥳 두 명만 0원! (나머지 N빵)', icon: <Gift className="w-5 h-5" />, min: 3 },
+          { id: 99, label: '🛠️ 기타 (내 맘대로 설정)', icon: <Settings className="w-5 h-5" />, min: 2 },
+        ];
+
+        const playDrumRoll = () => {
+          try {
+            if (!audioCtxRef.current) {
+              audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            const ctx = audioCtxRef.current;
+            
+            const duration = 3.0;
+            const bufferSize = ctx.sampleRate * duration;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < bufferSize; i++) {
+              data[i] = Math.random() * 2 - 1;
+            }
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 1000;
+
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.5, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            noise.start();
+
+            setTimeout(() => {
+                const osc = ctx.createOscillator();
+                const finishGain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.1);
+                
+                finishGain.gain.setValueAtTime(0.5, ctx.currentTime);
+                finishGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                
+                osc.connect(finishGain);
+                finishGain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.5);
+            }, 2800);
+          } catch (e) {
+            console.log('Audio Context not supported or blocked', e);
+          }
+        };
+
+        const handleAddName = () => {
+          if (newName.trim() !== '') {
+            setNames([...names, newName.trim()]);
+            setNewName('');
+          }
+        };
+
+        const handleKeyDown = (e) => {
+          // 한글 입력 중(Composing)일 때 중복 실행 방지
+          if (e.nativeEvent.isComposing) return;
+          
+          if (e.key === 'Enter') {
+            e.preventDefault(); 
+            handleAddName();
+          }
+        };
+
+        const removeName = (index) => {
+          const newNames = names.filter((_, i) => i !== index);
+          setNames(newNames);
+        };
+
+        // 커스텀 설정 업데이트
+        const updateCustomCount = (delta) => {
+            setCustomConfig(prev => {
+                const newCount = prev.count + delta;
+                if (newCount < 1) return prev;
+                if (newCount >= names.length && names.length > 0) return prev;
+                return { ...prev, count: newCount };
+            });
+        };
+
+        const startCalculation = () => {
+          const currentOption = options.find(o => o.id === selectedMode);
+          if (names.length < currentOption.min) {
+            alert(`선택하신 옵션은 최소 ${currentOption.min}명의 참가자가 필요해요!`);
+            return;
+          }
+          if (!totalAmount || parseInt(totalAmount) <= 0) {
+            alert('총 금액을 올바르게 입력해주세요!');
+            return;
+          }
+
+          if (selectedMode === 99) {
+             const amount = parseInt(totalAmount);
+             const { count, type, value } = customConfig;
+             
+             if(count >= names.length) {
+                 alert('특별 당첨자 수는 전체 인원보다 적어야 해요!');
+                 return;
+             }
+
+             if (type === 'percent') {
+                 if(value < 0 || value > 100) { alert('퍼센트는 0~100 사이로 입력해주세요!'); return; }
+                 if(count * value > 100) { alert('당첨자들의 부담 비율 합계가 100%를 넘습니다!'); return; }
+             } else if (type === 'won') {
+                 if(value < 0) { alert('금액은 0원 이상이어야 해요!'); return; }
+                 if(count * value > amount) { alert('당첨자들의 부담 금액 합계가 총 금액보다 큽니다!'); return; }
+             }
+          }
+
+          setStep('processing');
+          playDrumRoll();
+
+          let count = 0;
+          const interval = setInterval(() => {
+            setAnimationName(names[Math.floor(Math.random() * names.length)]);
+            count++;
+            if (count > 30) {
+              clearInterval(interval);
+              finalizeResult();
+            }
+          }, 100);
+        };
+
+        const finalizeResult = () => {
+          const shuffled = [...names];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+
+          const amount = parseInt(totalAmount);
+          let calcResults = [];
+
+          switch (selectedMode) {
+            case 0:
+              calcResults = shuffled.map((name, idx) => ({
+                  name,
+                  amount: idx === 0 ? amount : 0,
+                  role: idx === 0 ? '😭 당첨' : '😆 생존'
+              }));
+              break;
+            case 1:
+              {
+                const half = Math.floor(amount * 0.5);
+                const restPerPerson = Math.floor((amount - half) / (shuffled.length - 1));
+                const remainder = amount - half - (restPerPerson * (shuffled.length - 1));
+                calcResults = shuffled.map((name, idx) => ({
+                  name,
+                  amount: idx === 0 ? half + remainder : restPerPerson,
+                  role: idx === 0 ? '😱 50% 부담' : '🙂 N빵'
+                }));
+              }
+              break;
+            case 2:
+              {
+                const quarter = Math.floor(amount * 0.25);
+                const restTotal = amount - (quarter * 2);
+                const restPerPerson = Math.floor(restTotal / (shuffled.length - 2));
+                const remainder = restTotal - (restPerPerson * (shuffled.length - 2));
+                calcResults = shuffled.map((name, idx) => {
+                  if (idx === 0 || idx === 1) {
+                    return { name, amount: quarter, role: '😅 25% 부담' };
+                  } else {
+                    return { name, amount: restPerPerson + (idx === 2 ? remainder : 0), role: '🙂 N빵' };
+                  }
+                });
+              }
+              break;
+            case 3:
+              {
+                const restPerPerson = Math.floor(amount / (shuffled.length - 1));
+                const remainder = amount - (restPerPerson * (shuffled.length - 1));
+                calcResults = shuffled.map((name, idx) => ({
+                  name,
+                  amount: idx === 0 ? 0 : restPerPerson + (idx === 1 ? remainder : 0),
+                  role: idx === 0 ? '🎉 무료' : '💸 N빵'
+                }));
+              }
+              break;
+            case 4:
+              {
+                const restPerPerson = Math.floor(amount / (shuffled.length - 2));
+                const remainder = amount - (restPerPerson * (shuffled.length - 2));
+                calcResults = shuffled.map((name, idx) => ({
+                  name,
+                  amount: (idx === 0 || idx === 1) ? 0 : restPerPerson + (idx === 2 ? remainder : 0),
+                  role: (idx === 0 || idx === 1) ? '🎉 무료' : '💸 N빵'
+                }));
+              }
+              break;
+            case 99:
+              {
+                  const { count, type, value, label } = customConfig;
+                  let specialPerPerson = 0;
+                  
+                  if (type === 'percent') {
+                      specialPerPerson = Math.floor(amount * (value / 100));
+                  } else if (type === 'won') {
+                      specialPerPerson = parseInt(value);
+                  } else {
+                      specialPerPerson = 0;
+                  }
+
+                  const totalSpecial = specialPerPerson * count;
+                  const restTotal = amount - totalSpecial;
+                  const restCount = shuffled.length - count;
+                  const restPerPerson = Math.floor(restTotal / restCount);
+                  const remainder = restTotal - (restPerPerson * restCount);
+
+                  calcResults = shuffled.map((name, idx) => {
+                      if (idx < count) {
+                          return {
+                              name,
+                              amount: specialPerPerson,
+                              role: `🎯 ${label}`
+                          };
+                      } else {
+                          const myAmount = restPerPerson + (idx === count ? remainder : 0);
+                          return {
+                              name,
+                              amount: myAmount,
+                              role: '🙂 나머지'
+                          };
+                      }
+                  });
+              }
+              break;
+            default:
+              break;
+          }
+
+          setResult(calcResults);
+          setStep('result');
+          setShowConfetti(true);
+        };
+
+        const reset = () => {
+          setStep('input');
+          setResult([]);
+          setShowConfetti(false);
+        };
+
+        const formatMoney = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+        return (
+          <div className="min-h-screen flex items-center justify-center font-sans p-4 relative overflow-hidden">
+              {showConfetti && (
+                   <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                      {[...Array(20)].map((_, i) => (
+                          <div 
+                              key={i}
+                              className="absolute animate-fall"
+                              style={{
+                                  left: `${Math.random() * 100}%`,
+                                  top: `-10%`,
+                                  backgroundColor: ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff'][Math.floor(Math.random() * 5)],
+                                  width: '10px',
+                                  height: '10px',
+                                  animationDuration: `${Math.random() * 3 + 2}s`,
+                                  animationDelay: `${Math.random() * 2}s`
+                              }}
+                          />
+                      ))}
+                   </div>
+              )}
+
+            <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl overflow-hidden border-4 border-pink-200 z-10">
+              <div className="bg-pink-400 p-6 text-center relative">
+                  <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2 drop-shadow-md">
+                      <Wand2 className="w-8 h-8 animate-pulse" /> N빵 계산기
+                  </h1>
+                  <p className="text-pink-100 text-sm mt-2 opacity-90">친구들과 싸우지 말고 공정하게!</p>
+              </div>
+
+              <div className="p-6">
+                {step === 'input' && (
+                  <div className="space-y-6 animate-fadeIn">
+                      <div>
+                          <label className="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+                              <Users className="text-pink-400" /> 참여자 이름 ({names.length}명)
+                          </label>
+                          <div className="flex gap-2 mb-3">
+                              <input 
+                                  type="text" 
+                                  value={newName}
+                                  onChange={(e) => setNewName(e.target.value)}
+                                  onKeyDown={handleKeyDown}
+                                  placeholder="이름 입력 (엔터)"
+                                  className="flex-1 border-2 border-pink-100 rounded-xl px-4 py-2 focus:outline-none focus:border-pink-400 transition-colors"
+                              />
+                              <button 
+                                  onClick={handleAddName}
+                                  className="bg-pink-400 text-white rounded-xl px-4 hover:bg-pink-500 transition-colors"
+                              >
+                                  <UserPlus />
+                              </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                              {names.map((name, idx) => (
+                                  <span key={idx} className="bg-pink-100 text-pink-600 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 animate-scaleIn">
+                                      {name}
+                                      <button onClick={() => removeName(idx)} className="hover:text-pink-800"><Trash2 className="w-3 h-3" /></button>
+                                  </span>
+                              ))}
+                              {names.length === 0 && <p className="text-gray-400 text-sm pl-2">참여자를 추가해주세요!</p>}
+                          </div>
+                      </div>
+
+                      <div>
+                          <label className="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+                              <DollarSign className="text-pink-400" /> 총 금액
+                          </label>
+                          <input 
+                              type="number" 
+                              value={totalAmount}
+                              onChange={(e) => setTotalAmount(e.target.value)}
+                              placeholder="금액을 입력하세요 (원)"
+                              className="w-full border-2 border-pink-100 rounded-xl px-4 py-2 focus:outline-none focus:border-pink-400 transition-colors text-right font-mono text-lg"
+                          />
+                      </div>
+
+                      <div>
+                          <label className="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+                              <RefreshCw className="text-pink-400" /> 나누기 옵션
+                          </label>
+                          <div className="grid gap-2">
+                              {options.map((opt) => (
+                                  <button
+                                      key={opt.id}
+                                      onClick={() => setSelectedMode(opt.id)}
+                                      className={`p-3 rounded-xl text-left text-sm font-medium transition-all border-2 flex items-center gap-3
+                                          ${selectedMode === opt.id 
+                                              ? 'border-pink-400 bg-pink-50 text-pink-700 shadow-sm' 
+                                              : 'border-gray-100 text-gray-500 hover:bg-gray-50'}`}
+                                  >
+                                      <span className="bg-white p-1 rounded-full shadow-sm">{opt.icon}</span>
+                                      {opt.label}
+                                  </button>
+                              ))}
+                          </div>
+
+                          {selectedMode === 99 && (
+                              <div className="mt-3 p-4 bg-purple-50 rounded-xl border-2 border-dashed border-purple-200 animate-fadeIn">
+                                <h4 className="font-bold text-purple-700 mb-3 text-sm flex items-center gap-2">
+                                    <Settings className="w-4 h-4"/> 내 맘대로 규칙 만들기
+                                </h4>
+                                
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600 font-medium">당첨 인원</span>
+                                    <div className="flex items-center gap-3 bg-white rounded-lg px-2 py-1 border border-purple-100">
+                                       <button onClick={() => updateCustomCount(-1)} className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded hover:bg-gray-200 text-gray-600 font-bold">-</button>
+                                       <span className="font-bold text-purple-600 w-8 text-center">{customConfig.count}명</span>
+                                       <button onClick={() => updateCustomCount(1)} className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded hover:bg-gray-200 text-gray-600 font-bold">+</button>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                      <span className="text-sm text-gray-600 font-medium block mb-1">당첨자 1인당 부담금</span>
+                                      <div className="flex gap-2">
+                                        <select 
+                                            value={customConfig.type} 
+                                            onChange={(e) => setCustomConfig({...customConfig, type: e.target.value, value: e.target.value === 'free' ? 0 : customConfig.value})}
+                                            className="bg-white border border-purple-200 text-sm rounded-lg p-2 focus:outline-none focus:border-purple-400"
+                                        >
+                                            <option value="percent">퍼센트 (%)</option>
+                                            <option value="won">금액 (원)</option>
+                                            <option value="free">전액 면제 (0원)</option>
+                                        </select>
+                                        <div className="flex-1 relative">
+                                            {customConfig.type === 'free' ? (
+                                                <div className="w-full border border-purple-200 rounded-lg p-2 text-right text-gray-500 bg-gray-50 flex items-center justify-end h-full">
+                                                    0원 (무료)
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <input 
+                                                        type="number" 
+                                                        value={customConfig.value}
+                                                        onChange={(e) => setCustomConfig({...customConfig, value: parseInt(e.target.value) || 0})}
+                                                        className="w-full border border-purple-200 rounded-lg p-2 text-right pr-8 focus:outline-none focus:border-purple-400"
+                                                        placeholder="0"
+                                                    />
+                                                    <span className="absolute right-3 top-2 text-gray-400 text-sm">
+                                                        {customConfig.type === 'percent' ? '%' : '원'}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </div>
+                                      </div>
+                                  </div>
+                                  
+                                  <div>
+                                     <label className="text-sm text-gray-600 font-medium block mb-1">당첨자 호칭</label>
+                                     <input 
+                                        type="text" 
+                                        value={customConfig.label} 
+                                        onChange={(e) => setCustomConfig({...customConfig, label: e.target.value})} 
+                                        className="w-full border border-purple-200 rounded-lg p-2 focus:outline-none focus:border-purple-400 text-sm"
+                                        placeholder={customConfig.type === 'free' ? "예: 행운의 주인공" : "예: 회장님"}
+                                     />
+                                  </div>
+                                  
+                                  <div className="text-xs text-purple-600 bg-white p-2 rounded border border-purple-100 leading-relaxed">
+                                     💡 <strong>{customConfig.count}명</strong>이(가) 각각 <strong>{customConfig.type === 'free' ? '0원(무료)' : `${customConfig.value}${customConfig.type === 'percent'?'%':'원'}`}</strong>을(를) 냅니다.<br/>
+                                     (나머지 금액은 남은 사람들이 N빵)
+                                  </div>
+                                </div>
+                              </div>
+                          )}
+                      </div>
+
+                      <button 
+                          onClick={startCalculation}
+                          className="w-full bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all active:scale-95"
+                      >
+                          운명의 결과 보기! 🎲
+                      </button>
+                  </div>
+                )}
+
+                {step === 'processing' && (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-8 animate-fadeIn">
+                      <div className="relative">
+                          <div className="absolute inset-0 bg-pink-300 rounded-full blur-xl animate-pulse opacity-50"></div>
+                          <div className="bg-white border-8 border-pink-400 rounded-full w-48 h-48 flex items-center justify-center shadow-2xl z-10 relative">
+                              <span className="text-3xl font-black text-pink-600 animate-bounce">
+                                  {animationName}
+                              </span>
+                          </div>
+                      </div>
+                      <h2 className="text-2xl font-bold text-gray-700 animate-pulse">두구두구두구... 🥁</h2>
+                      <p className="text-gray-500">심장이 쫄깃해지는 중!</p>
+                  </div>
+                )}
+
+                {step === 'result' && (
+                  <div className="space-y-6 animate-slideUp">
+                      <div className="text-center mb-6">
+                          <h2 className="text-2xl font-bold text-gray-800">🎉 결과 발표 🎉</h2>
+                          <p className="text-gray-500 text-sm">총 금액: {formatMoney(totalAmount)}원</p>
+                      </div>
+
+                      <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                          {result.map((item, idx) => (
+                              <div 
+                                  key={idx} 
+                                  className={`flex justify-between items-center p-4 rounded-xl border-2 shadow-sm
+                                      ${item.amount === 0 ? 'bg-green-50 border-green-200' : 
+                                        item.role.includes('당첨') || item.role.includes('부담') || (selectedMode === 99 && idx < customConfig.count && item.amount > 0) ? 'bg-red-50 border-red-200' : 
+                                        (selectedMode === 99 && idx < customConfig.count && item.amount === 0) ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}
+                                  `}
+                              >
+                                  <div className="flex items-center gap-3">
+                                      <span className="text-2xl">
+                                          {item.amount === 0 ? '🥳' : (item.role.includes('당첨') || item.role.includes('부담') || (selectedMode === 99 && idx < customConfig.count) ? '😱' : '🙂')}
+                                      </span>
+                                      <div>
+                                          <p className="font-bold text-gray-800">{item.name}</p>
+                                          <p className="text-xs text-gray-500">{item.role}</p>
+                                      </div>
+                                  </div>
+                                  <div className="text-right">
+                                      <span className={`font-bold text-lg ${item.amount === 0 ? 'text-green-600' : (item.role.includes('당첨') || (selectedMode === 99 && idx < customConfig.count) ? 'text-red-600' : 'text-gray-700')}`}>
+                                          {formatMoney(item.amount)}원
+                                      </span>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+
+                      <button 
+                          onClick={reset}
+                          className="w-full bg-gray-800 text-white font-bold py-3 rounded-2xl hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+                      >
+                          <RefreshCw className="w-5 h-5" /> 다시 하기
+                      </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="bg-gray-50 p-3 text-center border-t border-gray-100">
+                  <p className="text-xs text-gray-400 font-medium">
+                      개발자: 가치있는 미래교육 연구소 대표 김병찬
+                  </p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // 렌더링 로직 수정: 이벤트 리스너 제거하고 직접 실행
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
